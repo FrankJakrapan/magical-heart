@@ -19,6 +19,7 @@
     idleDuration: 6.5,       // วินาทีก่อนระเบิดรอบถัดไป
     burstDuration: 1.3,
     reformDuration: 3.4,
+    settleDuration: 1.4,     // ช่วงส่งไม้ต่อจาก reform เข้าสู่ idle
     burstPower: 27
   };
 
@@ -63,11 +64,13 @@
     assemble: { spring: 24, damping: 0.90, noise: 0 },
     idle:     { spring: 15, damping: 0.85, noise: 1.4 },
     burst:    { spring: 0.8, damping: 0.986, noise: 0 },
-    reform:   { spring: 0, damping: 1, noise: 0 }   // reform ขยับด้วย reformStep แทนสปริง
+    reform:   { spring: 0, damping: 1, noise: 0 },  // reform ขยับด้วย reformStep แทนสปริง
+    settle:   { spring: 6, damping: 0.90, noise: 0 }
   };
 
   let phase = 'assemble';
   let phaseTime = 0;
+  let trailFade = 0.30;     // อัลฟาของสี่เหลี่ยมดำที่ทับทุกเฟรม = ความยาวหางเส้น
   let energy = 0;         // 0..1 ใช้ขยายแอ่งแสง/เร่งวงโคจรตอนระเบิด
 
   function setPhase(name) {
@@ -83,6 +86,17 @@
   }
 
   function currentConfig() {
+    if (phase === 'settle') {
+      // ค่อย ๆ ไล่ค่าเข้าหา idle แทนที่จะสลับทันที ตอนจบการรวมร่างจะได้ไม่สะดุด
+      const k = Math.min(phaseTime / CONFIG.settleDuration, 1);
+      const e = k * k * (3 - 2 * k);
+      const a = PHASES.settle, b = PHASES.idle;
+      return {
+        spring: a.spring + (b.spring - a.spring) * e,
+        damping: a.damping + (b.damping - a.damping) * e,
+        noise: b.noise * e
+      };
+    }
     return PHASES[phase];
   }
 
@@ -175,7 +189,9 @@
 
       // ยิ่งเข้าที่ยิ่งสว่าง -> ตอนบินเข้ารูปจะเห็นเป็นสายแสงจาง ๆ
       const d = p.distanceHome();
-      const arrive = (phase === 'burst' || reforming) ? 1 : Math.max(0.06, 1 - d / 22);
+      const arrive = (phase === 'burst' || phase === 'settle' || reforming)
+        ? 1
+        : Math.max(0.06, 1 - d / 22);
       const depth = 0.42 + 0.58 * ((s.p - 0.72) / 0.5);
       const alpha = Math.max(0, Math.min(1, arrive * p.bright * depth));
       const r = p.size * s.p;
@@ -253,7 +269,8 @@
     if (phase === 'assemble' && phaseTime > 2.4) setPhase('idle');
     else if (phase === 'idle' && !REDUCED && phaseTime > CONFIG.idleDuration) setPhase('burst');
     else if (phase === 'burst' && phaseTime > CONFIG.burstDuration) setPhase('reform');
-    else if (phase === 'reform' && phaseTime > CONFIG.reformDuration) setPhase('idle');
+    else if (phase === 'reform' && phaseTime > CONFIG.reformDuration) setPhase('settle');
+    else if (phase === 'settle' && phaseTime > CONFIG.settleDuration) setPhase('idle');
 
     // กล้อง: ปกติอยู่นิ่ง ส่ายเบา ๆ พอให้มีชีวิต (กด A เปิดหมุนอัตโนมัติ)
     if (!dragging) {
@@ -267,9 +284,11 @@
     }
     view.updateMatrix();
 
-    // เคลียร์แบบทิ้งหาง (ตอนระเบิดปล่อยหางยาวขึ้น)
+    // เคลียร์แบบทิ้งหาง (ตอนระเบิดปล่อยหางยาวขึ้น แล้วค่อย ๆ ไล่กลับ ไม่สลับทันที)
+    const fadeTarget = phase === 'burst' ? 0.14 : (phase === 'reform' ? 0.22 : 0.30);
+    trailFade += (fadeTarget - trailFade) * Math.min(1, dt * 1.5);
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0,0,0,' + (phase === 'burst' ? 0.14 : 0.30) + ')';
+    ctx.fillStyle = 'rgba(0,0,0,' + trailFade.toFixed(3) + ')';
     ctx.fillRect(0, 0, view.W, view.H);
 
     ctx.globalCompositeOperation = 'lighter';

@@ -122,6 +122,8 @@ class Particle {
     this.dx = this.x; this.dy = this.y; this.dz = this.z;
     this.dvx = this.vx; this.dvy = this.vy; this.dvz = this.vz;
     this.curl = (Math.random() - 0.5) * 2.4;   // มุมม้วนเข้า ทำให้ดูเป็นเกลียวไม่ใช่เส้นตรง
+    this.rDelay = Math.random() * 0.34;        // เหลื่อมเวลาเข้า ไม่ให้ถึงบ้านพร้อมกันทั้งฝูง
+    this.rSpan = 0.55 + Math.random() * 0.45;  // ระยะเวลาที่ใช้เข้ารูปของตัวเอง
   }
 
   /**
@@ -137,7 +139,10 @@ class Particle {
     this.dy += this.dvy * dt;
     this.dz += this.dvz * dt;
 
-    const e = k * k * k * (k * (k * 6 - 15) + 10);   // smootherstep: ออกตัวช้า จบนุ่ม
+    // แต่ละตัวมีจังหวะเข้าเป็นของตัวเอง ฝูงจึงทยอยเข้าที่แทนที่จะถึงพร้อมกัน
+    let u = (k - this.rDelay) / this.rSpan;
+    u = u < 0 ? 0 : (u > 1 ? 1 : u);
+    const e = u * u * u * (u * (u * 6 - 15) + 10);   // smootherstep: ออกตัวช้า จบนุ่ม
     const f = 1 - e;
 
     // ม้วนเข้าเป็นเกลียวรอบแกน y แล้วคลายมุมลงเมื่อใกล้ถึงบ้าน
@@ -147,14 +152,17 @@ class Particle {
     const ang = this.curl * f;
     const c = Math.cos(ang), sn = Math.sin(ang);
 
-    this.x = this.hx + (ox * c - oz * sn) * f;
-    this.y = this.hy + oy * f;
-    this.z = this.hz + (ox * sn + oz * c) * f;
+    const nx = this.hx + (ox * c - oz * sn) * f;
+    const ny = this.hy + oy * f;
+    const nz = this.hz + (ox * sn + oz * c) * f;
 
-    // ส่งความเร็วที่เหลือต่อให้เฟสถัดไป จะได้ไม่กระตุกตอนสลับเป็น idle
-    this.vx = this.dvx * f;
-    this.vy = this.dvy * f;
-    this.vz = this.dvz * f;
+    // ความเร็วจริงจากการขยับเฟรมนี้ ส่งต่อให้สปริงเฟสถัดไปรับช่วงได้เนียน
+    if (dt > 0) {
+      this.vx = (nx - this.x) / dt;
+      this.vy = (ny - this.y) / dt;
+      this.vz = (nz - this.z) / dt;
+    }
+    this.x = nx; this.y = ny; this.z = nz;
   }
 
   /**
