@@ -117,6 +117,46 @@ class Particle {
     this.vz += (this.z / len) * power * (0.7 + Math.random() * 0.6) + (Math.random() - 0.5) * power * spread;
   }
 
+  /** เริ่มจังหวะรวมร่าง: จำตำแหน่ง/ความเร็วตอนนี้ไว้ใช้ค่อย ๆ บีบกลับ */
+  beginReform() {
+    this.dx = this.x; this.dy = this.y; this.dz = this.z;
+    this.dvx = this.vx; this.dvy = this.vy; this.dvz = this.vz;
+    this.curl = (Math.random() - 0.5) * 2.4;   // มุมม้วนเข้า ทำให้ดูเป็นเกลียวไม่ใช่เส้นตรง
+  }
+
+  /**
+   * บีบกลับเข้ารูปแบบต่อเนื่อง
+   * ตำแหน่ง = ผสมระหว่าง "เศษที่ยังลอยตามแรงเดิม" กับ "บ้านของตัวเอง"
+   * @param {number} k ความคืบหน้า 0..1
+   */
+  reformStep(dt, k) {
+    // เศษยังลอยต่อด้วยความเร็วเดิมที่ค่อย ๆ หมดแรง -> ไม่มีรอยตัดตอนเริ่มรวม
+    const drag = Math.pow(0.955, dt * 60);
+    this.dvx *= drag; this.dvy *= drag; this.dvz *= drag;
+    this.dx += this.dvx * dt;
+    this.dy += this.dvy * dt;
+    this.dz += this.dvz * dt;
+
+    const e = k * k * k * (k * (k * 6 - 15) + 10);   // smootherstep: ออกตัวช้า จบนุ่ม
+    const f = 1 - e;
+
+    // ม้วนเข้าเป็นเกลียวรอบแกน y แล้วคลายมุมลงเมื่อใกล้ถึงบ้าน
+    const ox = this.dx - this.hx;
+    const oy = this.dy - this.hy;
+    const oz = this.dz - this.hz;
+    const ang = this.curl * f;
+    const c = Math.cos(ang), sn = Math.sin(ang);
+
+    this.x = this.hx + (ox * c - oz * sn) * f;
+    this.y = this.hy + oy * f;
+    this.z = this.hz + (ox * sn + oz * c) * f;
+
+    // ส่งความเร็วที่เหลือต่อให้เฟสถัดไป จะได้ไม่กระตุกตอนสลับเป็น idle
+    this.vx = this.dvx * f;
+    this.vy = this.dvy * f;
+    this.vz = this.dvz * f;
+  }
+
   /**
    * @param {number} dt  วินาที
    * @param {object} cfg { spring, damping, noise }

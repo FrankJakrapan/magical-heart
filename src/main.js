@@ -18,7 +18,7 @@
     autoSpin: 0.42,          // ความเร็วหมุนกล้อง (ปิดไว้เป็นค่าเริ่มต้น)
     idleDuration: 6.5,       // วินาทีก่อนระเบิดรอบถัดไป
     burstDuration: 1.3,
-    reformDuration: 2.8,
+    reformDuration: 3.4,
     burstPower: 27
   };
 
@@ -63,7 +63,7 @@
     assemble: { spring: 24, damping: 0.90, noise: 0 },
     idle:     { spring: 15, damping: 0.85, noise: 1.4 },
     burst:    { spring: 0.8, damping: 0.986, noise: 0 },
-    reform:   { spring: 20, damping: 0.90, noise: 0.6 }
+    reform:   { spring: 0, damping: 1, noise: 0 }   // reform ขยับด้วย reformStep แทนสปริง
   };
 
   let phase = 'assemble';
@@ -77,17 +77,13 @@
       energy = 1;
       Effects.spawnRing(rings, 1);
       for (const p of particles) p.explode(CONFIG.burstPower * (0.5 + Math.random() * 0.9));
+    } else if (name === 'reform') {
+      for (const p of particles) p.beginReform();
     }
   }
 
   function currentConfig() {
-    const base = PHASES[phase];
-    if (phase === 'reform') {
-      // ค่อย ๆ เพิ่มแรงดึงกลับ ให้รวมร่างแบบมีน้ำหนัก
-      const k = Math.min(phaseTime / CONFIG.reformDuration, 1);
-      return { spring: 3 + k * 22, damping: 0.90, noise: k * 1.0 };
-    }
-    return base;
+    return PHASES[phase];
   }
 
   /* ---------- resize ---------- */
@@ -168,14 +164,18 @@
     // ละอองไหลวนอยู่ในรูป (ตอนระเบิดหมุนไวขึ้น)
     const swirl = CONFIG.swirlSpeed * (1 + energy * 1.2);
 
+    const reforming = phase === 'reform';
+    const k = reforming ? Math.min(phaseTime / CONFIG.reformDuration, 1) : 0;
+
     for (const p of particles) {
       p.swirl(dt, swirl);
-      p.update(dt, cfg, time);
+      if (reforming) p.reformStep(dt, k);
+      else p.update(dt, cfg, time);
       const s = view.project(p.x, p.y, p.z);
 
       // ยิ่งเข้าที่ยิ่งสว่าง -> ตอนบินเข้ารูปจะเห็นเป็นสายแสงจาง ๆ
       const d = p.distanceHome();
-      const arrive = phase === 'burst' ? 1 : Math.max(0.06, 1 - d / 22);
+      const arrive = (phase === 'burst' || reforming) ? 1 : Math.max(0.06, 1 - d / 22);
       const depth = 0.42 + 0.58 * ((s.p - 0.72) / 0.5);
       const alpha = Math.max(0, Math.min(1, arrive * p.bright * depth));
       const r = p.size * s.p;

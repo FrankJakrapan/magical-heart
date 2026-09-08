@@ -84,13 +84,20 @@ const Heart = (function () {
 
   /**
    * ที่นั่งประจำตัวของอนุภาค
-   * edge = ไหลไปตามเส้นรอบรูป, body = โคจรเป็นวงรีอยู่ในเนื้อ
+   * edge = แกว่งไปมารอบ ๆ จุดของตัวเองบนเส้นรอบรูป (ไม่วิ่งวนเป็นวงกลม)
+   * body = โคจรเป็นวงรีอยู่ในเนื้อ -> เห็นเป็นละอองไหลซ้ายขวา
    */
   function randomSeat(edgeChance) {
     if (Math.random() < (edgeChance === undefined ? 0.28 : edgeChance)) {
+      const t0 = Math.random();
       return {
         type: 'edge',
-        t: Math.random(),
+        t0: t0,
+        t: t0,
+        amp: 0.008 + Math.random() * 0.022,
+        sw: 0.5 + Math.random() * 0.8,
+        ph: Math.random() * TAU,
+        clock: Math.random() * 10,
         zj: (Math.random() - 0.5) * 1.6,
         nj: (Math.random() - 0.5) * 0.7
       };
@@ -123,7 +130,9 @@ const Heart = (function () {
   /** ขยับที่นั่งไปตามเวลา -> ละอองไหลวนโดยรูปหัวใจไม่ขยับ */
   function advanceSeat(seat, dt, speed) {
     if (seat.type === 'edge') {
-      seat.t += dt * speed * 0.055;
+      // แกว่งกลับไปกลับมาตามแนวเส้นขอบ ไม่ไหลไปทางเดียวจนดูเป็นกรอบวิ่ง
+      seat.clock += dt * speed;
+      seat.t = seat.t0 + seat.amp * Math.sin(seat.sw * seat.clock + seat.ph);
     } else {
       // ข้างในหมุนไวกว่าขอบเล็กน้อย ได้ความรู้สึกเป็นกระแสวน
       seat.th += dt * speed * (1.35 - seat.f * 0.55);

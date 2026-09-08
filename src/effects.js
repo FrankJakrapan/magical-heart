@@ -6,6 +6,32 @@ const Effects = (function () {
   const POOL_Y = -24;          // ระดับแอ่งแสงใน model space
   const MIST_COLORS = ['#60a5fa', '#93c5fd', '#bfdbfe', '#3b82f6'];
 
+  /**
+   * สไปรต์ลำแสง: อบทั้งทรงกรวย ขอบฟุ้งซ้ายขวา และการจางขึ้นด้านบนไว้ในภาพเดียว
+   * วาดครั้งเดียวตอนโหลด แล้ว drawImage รูปเดียวต่อเฟรม -> ไม่มีขอบคมและไม่มีรอยต่อเป็นชั้น
+   */
+  const beamSprite = (function () {
+    const W = 160, H = 256;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+
+    for (let row = 0; row < H; row++) {
+      const t = row / (H - 1);                    // 0 = ยอด, 1 = โคน
+      const halfW = (0.13 + 0.87 * Math.pow(t, 0.85)) * (W / 2);
+      const a = Math.pow(t, 1.7) * 0.9;
+      const grad = g.createLinearGradient(W / 2 - halfW, 0, W / 2 + halfW, 0);
+      grad.addColorStop(0.00, 'rgba(147,197,253,0)');
+      grad.addColorStop(0.22, 'rgba(147,197,253,' + (a * 0.28).toFixed(4) + ')');
+      grad.addColorStop(0.50, 'rgba(219,234,254,' + (a * 0.65).toFixed(4) + ')');
+      grad.addColorStop(0.78, 'rgba(147,197,253,' + (a * 0.28).toFixed(4) + ')');
+      grad.addColorStop(1.00, 'rgba(147,197,253,0)');
+      g.fillStyle = grad;
+      g.fillRect(W / 2 - halfW, row, halfW * 2, 1);
+    }
+    return c;
+  })();
+
   /* ---------- ดาวพื้นหลัง ---------- */
   function createStars(count) {
     const stars = [];
@@ -53,19 +79,19 @@ const Effects = (function () {
     ctx.fill();
     ctx.restore();
 
-    // ลำแสงพุ่งขึ้นหาหัวใจ
-    const top = view.project(0, -11, 0);
-    const bg = ctx.createLinearGradient(0, base.y, 0, top.y);
-    bg.addColorStop(0, 'rgba(96,165,250,' + (0.26 + energy * 0.2) + ')');
-    bg.addColorStop(1, 'rgba(96,165,250,0)');
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.moveTo(base.x - rx * 0.5, base.y);
-    ctx.lineTo(base.x + rx * 0.5, base.y);
-    ctx.lineTo(top.x + rx * 0.16, top.y);
-    ctx.lineTo(top.x - rx * 0.16, top.y);
-    ctx.closePath();
-    ctx.fill();
+    drawBeam(ctx, view, time, energy, base, rx);
+  }
+
+  /** ลำแสงนุ่ม ๆ วาดจากสไปรต์รูปเดียว */
+  function drawBeam(ctx, view, time, energy, base, rx) {
+    const top = view.project(0, -8, 0);
+    const span = base.y - top.y;
+    if (span <= 0) return;
+
+    const w = rx * 1.15 * (1 + Math.sin(time * 0.5) * 0.03);
+    ctx.globalAlpha = 0.5 + energy * 0.35;
+    ctx.drawImage(beamSprite, base.x - w / 2, top.y, w, span);
+    ctx.globalAlpha = 1;
   }
 
   /* ---------- หมอกที่พวยพุ่งออกจากแอ่ง ---------- */
