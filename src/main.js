@@ -12,8 +12,10 @@
     particles: window.innerWidth < 700 ? 900 : 1500,
     sparks: 54,
     stars: 130,
+    mist: window.innerWidth < 700 ? 60 : 110,
     fov: 90,
-    autoSpin: 0.42,          // เรเดียน/วินาที
+    swirlSpeed: 0.95,        // ความเร็วที่ละอองไหลวนอยู่ในรูปหัวใจ
+    autoSpin: 0.42,          // ความเร็วหมุนกล้อง (ปิดไว้เป็นค่าเริ่มต้น)
     idleDuration: 6.5,       // วินาทีก่อนระเบิดรอบถัดไป
     burstDuration: 1.3,
     reformDuration: 2.8,
@@ -23,9 +25,9 @@
   /* ---------- สถานะฉาก ---------- */
   const view = {
     W: 0, H: 0, cx: 0, cy: 0, scale: 1,
-    rotY: 0, rotX: -0.12,
-    spin: CONFIG.autoSpin,
-    autoSpin: !REDUCED,
+    rotY: 0, rotX: -0.05,
+    spin: 0,
+    autoSpin: false,          // หัวใจอยู่กับที่ ให้ละอองข้างในหมุนแทน (กด A เพื่อหมุนกล้อง)
     cosY: 1, sinY: 0, cosX: 1, sinX: 0,
 
     updateMatrix() {
@@ -53,6 +55,8 @@
   let particles = [];
   let sparks = [];
   let stars = [];
+  let mist = [];
+  let rings = Effects.createRings();
 
   /* ---------- จังหวะ ---------- */
   const PHASES = {
@@ -71,6 +75,7 @@
     phaseTime = 0;
     if (name === 'burst') {
       energy = 1;
+      Effects.spawnRing(rings, 1);
       for (const p of particles) p.explode(CONFIG.burstPower * (0.5 + Math.random() * 0.9));
     }
   }
@@ -104,6 +109,8 @@
     for (let i = 0; i < CONFIG.particles; i++) particles.push(new Particle());
     sparks = Effects.createSparks(CONFIG.sparks);
     stars = Effects.createStars(CONFIG.stars);
+    mist = Effects.createMist(CONFIG.mist);
+    rings = Effects.createRings();
   }
 
   /* ---------- อินพุต ---------- */
@@ -158,8 +165,11 @@
   /* ---------- วาด ---------- */
   function drawParticles(dt, time, cfg) {
     ctx.lineCap = 'round';
+    // ละอองไหลวนอยู่ในรูป (ตอนระเบิดหมุนไวขึ้น)
+    const swirl = CONFIG.swirlSpeed * (1 + energy * 1.2);
 
     for (const p of particles) {
+      p.swirl(dt, swirl);
       p.update(dt, cfg, time);
       const s = view.project(p.x, p.y, p.z);
 
@@ -245,13 +255,15 @@
     else if (phase === 'burst' && phaseTime > CONFIG.burstDuration) setPhase('reform');
     else if (phase === 'reform' && phaseTime > CONFIG.reformDuration) setPhase('idle');
 
-    // การหมุน
+    // กล้อง: ปกติอยู่นิ่ง ส่ายเบา ๆ พอให้มีชีวิต (กด A เปิดหมุนอัตโนมัติ)
     if (!dragging) {
       const target = view.autoSpin ? CONFIG.autoSpin : 0;
       view.spin += (target - view.spin) * Math.min(1, dt * 1.2);
       view.rotY += view.spin * dt;
-      // ส่ายขึ้นลงเบา ๆ ให้เห็นความหนา
-      view.rotX += (Math.sin(time * 0.35) * 0.16 - view.rotX) * Math.min(1, dt * 0.6);
+      if (!view.autoSpin) {
+        view.rotY += (Math.sin(time * 0.22) * 0.07 - view.rotY) * Math.min(1, dt * 0.5);
+      }
+      view.rotX += (Math.sin(time * 0.31) * 0.06 - view.rotX) * Math.min(1, dt * 0.5);
     }
     view.updateMatrix();
 
@@ -263,6 +275,8 @@
     ctx.globalCompositeOperation = 'lighter';
     Effects.drawStars(ctx, stars, view.W, view.H, time);
     Effects.drawPool(ctx, view, time, energy);
+    Effects.drawMist(ctx, view, mist, dt, energy);
+    Effects.drawRings(ctx, view, rings, dt);
     drawSparks(dt);
     drawParticles(dt, time, currentConfig());
 

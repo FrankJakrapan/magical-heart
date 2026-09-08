@@ -1,72 +1,100 @@
 /**
- * particle.js — อนุภาคหนึ่งตัวใน model space
+ * particle.js — อนุภาคหนึ่งตัว
  *
- * ทุกอย่างคิดใน model space (ไม่หมุน) แล้วค่อยหมุน + ฉายเป็น 2 มิติตอนวาด
- * ทำให้จังหวะ "แตกตัว -> รวมกลับ" ทำงานร่วมกับการหมุนได้โดยไม่พัง
+ * ตำแหน่งประจำตัว (home) ไม่ได้อยู่นิ่ง แต่ไหลวนตามที่นั่งใน Heart
+ * ตัวอนุภาคใช้สปริงวิ่งตาม home -> ได้ทั้งการไหลวนและการระเบิด/รวมร่างในระบบเดียว
  */
 const PALETTE = [
   '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8', '#dbeafe', '#a5f3fc'
 ];
 
 /**
- * แคชสไปรต์แสงฟุ้งของแต่ละสี วาดครั้งเดียวแล้ว drawImage ซ้ำ
+ * แคชสไปรต์แสงของแต่ละสี วาดครั้งเดียวแล้ว drawImage ซ้ำ
  * เร็วกว่าการวาด arc + gradient รายอนุภาคทุกเฟรมมาก
  */
 const Sprites = (function () {
-  const SIZE = 48;
   const cache = new Map();
-
-  function get(color) {
-    let c = cache.get(color);
-    if (c) return c;
-    c = document.createElement('canvas');
-    c.width = c.height = SIZE;
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(SIZE / 2, SIZE / 2, 0, SIZE / 2, SIZE / 2, SIZE / 2);
-    grad.addColorStop(0.00, '#ffffff');
-    grad.addColorStop(0.18, color);
-    grad.addColorStop(0.45, hexToRgba(color, 0.35));
-    grad.addColorStop(1.00, hexToRgba(color, 0));
-    g.fillStyle = grad;
-    g.fillRect(0, 0, SIZE, SIZE);
-    cache.set(color, c);
-    return c;
-  }
 
   function hexToRgba(hex, a) {
     const n = parseInt(hex.slice(1), 16);
     return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
   }
 
-  return { get };
+  function make(size, stops) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    for (const s of stops) grad.addColorStop(s[0], s[1]);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    return c;
+  }
+
+  /** จุดแสงแกนกลางสว่าง */
+  function get(color) {
+    let c = cache.get(color);
+    if (c) return c;
+    c = make(48, [
+      [0.00, '#ffffff'],
+      [0.18, color],
+      [0.45, hexToRgba(color, 0.35)],
+      [1.00, hexToRgba(color, 0)]
+    ]);
+    cache.set(color, c);
+    return c;
+  }
+
+  /** ก้อนหมอกนุ่ม ๆ ไม่มีแกนสว่าง */
+  function soft(color) {
+    const key = 'soft:' + color;
+    let c = cache.get(key);
+    if (c) return c;
+    c = make(128, [
+      [0.00, hexToRgba(color, 0.5)],
+      [0.35, hexToRgba(color, 0.2)],
+      [0.70, hexToRgba(color, 0.055)],
+      [1.00, hexToRgba(color, 0)]
+    ]);
+    cache.set(key, c);
+    return c;
+  }
+
+  return { get, soft };
 })();
 
 class Particle {
   constructor() {
     this.color = PALETTE[(Math.random() * PALETTE.length) | 0];
     this.sprite = Sprites.get(this.color);
-    this.size = 0.5 + Math.random() * 1.3;
     this.phase = Math.random() * Math.PI * 2;
-    this.assignHome();
+    this.seat = Heart.randomSeat();
+
+    if (this.seat.type === 'edge') {
+      this.size = 0.45 + Math.random() * 0.85;
+      this.bright = 1;
+    } else {
+      this.size = 0.5 + Math.random() * 1.25;
+      this.bright = 0.5 + Math.random() * 0.4;
+    }
+
+    this.syncHome();
     this.spawnAtPool();
-    this.px = null; // ตำแหน่งจอครั้งก่อน ใช้ลากเส้นหาง
+    this.px = null;   // ตำแหน่งบนจอเฟรมก่อนหน้า ใช้ลากเส้นหาง
     this.py = null;
   }
 
-  /** จับจองตำแหน่งประจำตัวในทรงหัวใจ */
-  assignHome() {
-    const h = Heart.samplePoint();
+  syncHome() {
+    const h = Heart.seatPosition(this.seat);
     this.hx = h.x;
     this.hy = h.y;
     this.hz = h.z;
-    this.shell = h.shell;
-    // อนุภาคขอบสว่างกว่าและเล็กกว่า -> ได้เส้นรอบรูปคม
-    if (this.shell > 0.93) {
-      this.size = 0.4 + Math.random() * 0.9;
-      this.bright = 1;
-    } else {
-      this.bright = 0.55 + Math.random() * 0.35;
-    }
+  }
+
+  /** ให้ที่นั่งไหลวนไปตามเวลา (รูปหัวใจไม่ขยับ แต่ละอองหมุน) */
+  swirl(dt, speed) {
+    Heart.advanceSeat(this.seat, dt, speed);
+    this.syncHome();
   }
 
   /** เกิดใหม่จากแอ่งแสงด้านล่าง */
@@ -91,15 +119,12 @@ class Particle {
 
   /**
    * @param {number} dt  วินาที
-   * @param {object} cfg { spring, damping, noise, gravity }
+   * @param {object} cfg { spring, damping, noise }
    */
   update(dt, cfg, time) {
-    // สปริงดึงกลับเข้าตำแหน่งประจำตัว
     this.vx += (this.hx - this.x) * cfg.spring * dt;
     this.vy += (this.hy - this.y) * cfg.spring * dt;
     this.vz += (this.hz - this.z) * cfg.spring * dt;
-
-    if (cfg.gravity) this.vy -= cfg.gravity * dt;
 
     const damp = Math.pow(cfg.damping, dt * 60);
     this.vx *= damp;
@@ -110,7 +135,7 @@ class Particle {
     this.y += this.vy * dt;
     this.z += this.vz * dt;
 
-    // สั่นระยิบ ๆ ตอนอยู่นิ่ง
+    // สั่นระยิบ ๆ ตอนอยู่ในรูป
     if (cfg.noise) {
       this.x += Math.sin(time * 1.7 + this.phase) * cfg.noise * dt;
       this.y += Math.cos(time * 2.1 + this.phase) * cfg.noise * dt;
