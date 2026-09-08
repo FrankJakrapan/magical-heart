@@ -12,7 +12,11 @@
     particles: window.innerWidth < 700 ? 900 : 1500,
     sparks: 54,
     stars: 130,
-    mist: window.innerWidth < 700 ? 60 : 110,
+    mist: window.innerWidth < 700 ? 45 : 72,
+    nebula: 6,
+    bokeh: window.innerWidth < 700 ? 40 : 70,
+    glow: 0.5,               // ความแรงของแสงฟุ้งรอบอนุภาคสว่าง (0 = ปิด)
+    beatPeriod: 2.6,         // จังหวะเต้นของหัวใจ (วินาที)
     fov: 90,
     swirlSpeed: 0.95,        // ความเร็วที่ละอองไหลวนอยู่ในรูปหัวใจ
     autoSpin: 0.42,          // ความเร็วหมุนกล้อง (ปิดไว้เป็นค่าเริ่มต้น)
@@ -57,7 +61,11 @@
   let sparks = [];
   let stars = [];
   let mist = [];
+  let nebula = [];
+  let bokeh = [];
   let rings = Effects.createRings();
+  let shooters = Effects.createShooters();
+  let beat = 0;             // 0..1 ความแรงของจังหวะเต้น ณ ขณะนั้น
 
   /* ---------- จังหวะ ---------- */
   const PHASES = {
@@ -120,7 +128,10 @@
     sparks = Effects.createSparks(CONFIG.sparks);
     stars = Effects.createStars(CONFIG.stars);
     mist = Effects.createMist(CONFIG.mist);
+    nebula = Effects.createNebula(CONFIG.nebula);
+    bokeh = Effects.createBokeh(CONFIG.bokeh);
     rings = Effects.createRings();
+    shooters = Effects.createShooters();
   }
 
   /* ---------- อินพุต ---------- */
@@ -173,11 +184,12 @@
   window.addEventListener('resize', resize);
 
   /* ---------- วาด ---------- */
-  function drawParticles(dt, time, cfg) {
+  function drawParticles(dt, time, cfg, heartScale) {
     ctx.lineCap = 'round';
     // ละอองไหลวนอยู่ในรูป (ตอนระเบิดหมุนไวขึ้น)
     const swirl = CONFIG.swirlSpeed * (1 + energy * 1.2);
 
+    const glow = CONFIG.glow;
     const reforming = phase === 'reform';
     const k = reforming ? Math.min(phaseTime / CONFIG.reformDuration, 1) : 0;
 
@@ -185,7 +197,7 @@
       p.swirl(dt, swirl);
       if (reforming) p.reformStep(dt, k);
       else p.update(dt, cfg, time);
-      const s = view.project(p.x, p.y, p.z);
+      const s = view.project(p.x * heartScale, p.y * heartScale, p.z * heartScale);
 
       // ยิ่งเข้าที่ยิ่งสว่าง -> ตอนบินเข้ารูปจะเห็นเป็นสายแสงจาง ๆ
       const d = p.distanceHome();
@@ -211,8 +223,13 @@
         }
       }
 
-      // แสงฟุ้ง (สไปรต์แคชไว้แล้ว)
+      // แสงฟุ้ง (สไปรต์แคชไว้แล้ว) + วงฟุ้งใหญ่จาง ๆ เฉพาะเม็ดสว่าง
       const d2 = r * 7;
+      if (glow && p.halo) {
+        const d3 = d2 * 3.2;
+        ctx.globalAlpha = alpha * 0.1 * glow;
+        ctx.drawImage(p.halo, s.x - d3 / 2, s.y - d3 / 2, d3, d3);
+      }
       ctx.globalAlpha = alpha;
       ctx.drawImage(p.sprite, s.x - d2 / 2, s.y - d2 / 2, d2, d2);
 
@@ -265,6 +282,11 @@
     phaseTime += dt;
     energy += (0 - energy) * Math.min(1, dt * 1.6);
 
+    // จังหวะเต้นสองครั้งติดกันแบบหัวใจจริง
+    const bt = (time % CONFIG.beatPeriod);
+    beat = Math.exp(-Math.pow(bt / 0.14, 2)) + 0.55 * Math.exp(-Math.pow((bt - 0.26) / 0.14, 2));
+    if (phase === 'burst') beat *= 0.3;
+
     // เปลี่ยนจังหวะ
     if (phase === 'assemble' && phaseTime > 2.4) setPhase('idle');
     else if (phase === 'idle' && !REDUCED && phaseTime > CONFIG.idleDuration) setPhase('burst');
@@ -292,12 +314,17 @@
     ctx.fillRect(0, 0, view.W, view.H);
 
     ctx.globalCompositeOperation = 'lighter';
+    Effects.drawNebula(ctx, nebula, view.W, view.H, dt, time);
     Effects.drawStars(ctx, stars, view.W, view.H, time);
+    Effects.drawBokeh(ctx, bokeh, view.W, view.H, dt, time);
+    Effects.drawAura(ctx, view, 16, beat, energy);
     Effects.drawPool(ctx, view, time, energy);
     Effects.drawMist(ctx, view, mist, dt, energy);
     Effects.drawRings(ctx, view, rings, dt);
+    Effects.drawHalo(ctx, view, time, beat);
     drawSparks(dt);
-    drawParticles(dt, time, currentConfig());
+    drawParticles(dt, time, currentConfig(), 1 + beat * 0.035);
+    Effects.drawShooters(ctx, shooters, view.W, view.H, dt);
 
     requestAnimationFrame(frame);
   }

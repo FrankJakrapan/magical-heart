@@ -67,12 +67,15 @@ class Particle {
   constructor() {
     this.color = PALETTE[(Math.random() * PALETTE.length) | 0];
     this.sprite = Sprites.get(this.color);
+    this.halo = null;   // ตั้งค่าให้เฉพาะเม็ดขอบบางส่วน ใน assignRole()
     this.phase = Math.random() * Math.PI * 2;
     this.seat = Heart.randomSeat();
 
     if (this.seat.type === 'edge') {
       this.size = 0.45 + Math.random() * 0.85;
       this.bright = 1;
+      // ให้วงฟุ้งใหญ่แค่บางเม็ด พอให้ภาพดูฟุ้งโดยไม่กินแรงวาด
+      if (Math.random() < 0.4) this.halo = Sprites.soft(this.color);
     } else {
       this.size = 0.5 + Math.random() * 1.25;
       this.bright = 0.5 + Math.random() * 0.4;

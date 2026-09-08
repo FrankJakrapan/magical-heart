@@ -247,6 +247,186 @@ const Effects = (function () {
     }
   }
 
+  /* ---------- เนบิวลาพื้นหลัง: ก้อนสีจาง ๆ ลอยช้า ๆ กันฉากโล่ง ---------- */
+  const NEBULA_COLORS = ['#1d4ed8', '#312e81', '#0e7490', '#4c1d95', '#1e40af'];
+
+  function createNebula(count) {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      const color = NEBULA_COLORS[(Math.random() * NEBULA_COLORS.length) | 0];
+      arr.push({
+        sprite: Sprites.soft(color),
+        x: Math.random(),
+        y: Math.random() * 0.85,
+        r: 0.35 + Math.random() * 0.55,
+        a: 0.10 + Math.random() * 0.12,
+        vx: (Math.random() - 0.5) * 0.006,
+        vy: -0.002 - Math.random() * 0.004,
+        ph: Math.random() * Math.PI * 2,
+        sw: 0.12 + Math.random() * 0.2
+      });
+    }
+    return arr;
+  }
+
+  function drawNebula(ctx, nebula, W, H, dt, time) {
+    const base = Math.max(W, H);
+    for (const n of nebula) {
+      n.x += n.vx * dt;
+      n.y += n.vy * dt;
+      if (n.y < -0.4) { n.y = 1.3; n.x = Math.random(); }
+      if (n.x < -0.4) n.x = 1.3;
+      if (n.x > 1.4) n.x = -0.3;
+
+      const d = n.r * base * (1 + Math.sin(time * n.sw + n.ph) * 0.08);
+      ctx.globalAlpha = n.a * (0.75 + 0.25 * Math.sin(time * n.sw * 1.3 + n.ph));
+      ctx.drawImage(n.sprite, n.x * W - d / 2, n.y * H - d / 2, d, d);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- ฝุ่นแสงลอยทั่วจอ มีทั้งชัดและเบลอ ---------- */
+  function createBokeh(count) {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      const blur = Math.random() < 0.45;
+      const color = blur ? '#93c5fd' : '#dbeafe';
+      arr.push({
+        sprite: blur ? Sprites.soft(color) : Sprites.get(color),
+        x: Math.random(),
+        y: Math.random(),
+        size: blur ? 26 + Math.random() * 54 : 3 + Math.random() * 7,
+        a: blur ? 0.05 + Math.random() * 0.07 : 0.16 + Math.random() * 0.3,
+        vy: -(0.004 + Math.random() * 0.012),
+        drift: 0.004 + Math.random() * 0.012,
+        ph: Math.random() * Math.PI * 2,
+        sw: 0.15 + Math.random() * 0.35
+      });
+    }
+    return arr;
+  }
+
+  function drawBokeh(ctx, bokeh, W, H, dt, time) {
+    for (const b of bokeh) {
+      b.y += b.vy * dt;
+      if (b.y < -0.08) { b.y = 1.08; b.x = Math.random(); }
+      const x = (b.x + Math.sin(time * b.sw + b.ph) * b.drift) * W;
+      const d = b.size;
+      ctx.globalAlpha = b.a * (0.55 + 0.45 * Math.sin(time * b.sw * 2 + b.ph));
+      ctx.drawImage(b.sprite, x - d / 2, b.y * H - d / 2, d, d);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- แสงเรืองรอบหัวใจ เต้นตามจังหวะ ---------- */
+  const auraSprite = Sprites.soft('#3b82f6');
+  const auraCore = Sprites.soft('#bfdbfe');
+
+  function drawAura(ctx, view, halfW, beat, energy) {
+    const c = view.project(0, 0, 0);
+    const w = halfW * view.scale * c.p;
+
+    ctx.globalAlpha = 0.22 + beat * 0.18 + energy * 0.12;
+    const d1 = w * 3.4;
+    ctx.drawImage(auraSprite, c.x - d1 / 2, c.y - d1 / 2, d1, d1);
+
+    ctx.globalAlpha = 0.12 + beat * 0.18;
+    const d2 = w * 1.9;
+    ctx.drawImage(auraCore, c.x - d2 / 2, c.y - d2 / 2, d2, d2);
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- วงแหวนแสงเอียงรอบหัวใจ ---------- */
+  function drawHalo(ctx, view, time, beat) {
+    const SEG = 96;
+    const radius = 21 + beat * 0.8;
+    const tilt = 0.42;
+    const spin = time * 0.16;
+
+    ctx.lineWidth = 1.1;
+    for (let i = 0; i < SEG; i++) {
+      const a0 = (i / SEG) * Math.PI * 2 + spin;
+      const a1 = ((i + 1) / SEG) * Math.PI * 2 + spin;
+      const p0 = ringPoint(view, a0, radius, tilt);
+      const p1 = ringPoint(view, a1, radius, tilt);
+      // ส่วนที่อยู่ใกล้กล้องสว่างกว่า ได้ความรู้สึกเป็นวงแหวนสามมิติ
+      const depth = (p0.p - 0.78) / 0.45;
+      ctx.globalAlpha = Math.max(0, Math.min(1, depth)) * (0.13 + beat * 0.14);
+      ctx.strokeStyle = i % 8 < 4 ? '#bfdbfe' : '#7dd3fc';
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function ringPoint(view, a, r, tilt) {
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    return view.project(x, z * Math.sin(tilt) - 6, z * Math.cos(tilt));
+  }
+
+  /* ---------- ดาวตกเป็นครั้งคราว ---------- */
+  function createShooters() {
+    return { list: [], timer: 2 + Math.random() * 3 };
+  }
+
+  function drawShooters(ctx, sh, W, H, dt) {
+    sh.timer -= dt;
+    if (sh.timer <= 0) {
+      sh.timer = 3.5 + Math.random() * 5;
+      const fromLeft = Math.random() < 0.5;
+      const speed = 420 + Math.random() * 380;
+      const ang = (fromLeft ? 0.35 : Math.PI - 0.35) + (Math.random() - 0.5) * 0.25;
+      sh.list.push({
+        x: fromLeft ? -60 : W + 60,
+        y: Math.random() * H * 0.45,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed * 0.55,
+        life: 0,
+        max: 1.6,
+        len: 90 + Math.random() * 120
+      });
+    }
+
+    for (let i = sh.list.length - 1; i >= 0; i--) {
+      const s = sh.list[i];
+      s.life += dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      if (s.life > s.max) { sh.list.splice(i, 1); continue; }
+
+      const k = s.life / s.max;
+      const a = Math.sin(Math.PI * k) * 0.75;
+      const n = Math.hypot(s.vx, s.vy) || 1;
+      const tx = s.x - (s.vx / n) * s.len;
+      const ty = s.y - (s.vy / n) * s.len;
+
+      const grad = ctx.createLinearGradient(s.x, s.y, tx, ty);
+      grad.addColorStop(0, 'rgba(255,255,255,' + a.toFixed(3) + ')');
+      grad.addColorStop(0.35, 'rgba(147,197,253,' + (a * 0.45).toFixed(3) + ')');
+      grad.addColorStop(1, 'rgba(147,197,253,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(tx, ty);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- ขอบจอมืดลง ให้ภาพดูมีมิติ ---------- */
+  function drawVignette(ctx, W, H) {
+    const g = ctx.createRadialGradient(W / 2, H * 0.5, Math.min(W, H) * 0.28, W / 2, H * 0.5, Math.max(W, H) * 0.78);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.65, 'rgba(0,0,0,0.28)');
+    g.addColorStop(1, 'rgba(2,6,23,0.75)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
   function createSparks(count) {
     const arr = [];
     for (let i = 0; i < count; i++) arr.push(new OrbitSpark(i % 3));
@@ -257,6 +437,15 @@ const Effects = (function () {
     POOL_Y: POOL_Y,
     createStars: createStars,
     drawStars: drawStars,
+    createNebula: createNebula,
+    drawNebula: drawNebula,
+    createBokeh: createBokeh,
+    drawBokeh: drawBokeh,
+    drawAura: drawAura,
+    drawHalo: drawHalo,
+    createShooters: createShooters,
+    drawShooters: drawShooters,
+    drawVignette: drawVignette,
     drawPool: drawPool,
     createMist: createMist,
     drawMist: drawMist,
