@@ -21,6 +21,8 @@
 
   .card {
     position: relative;
+    text-decoration: none;
+    color: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -47,14 +49,7 @@
     filter: blur(8px);
   }
 
-  .kicker {
-    font-size: 13px;
-    letter-spacing: 0.42em;
-    text-indent: 0.42em;
-    text-transform: uppercase;
-    opacity: 0.8;
-  }
-
+  
   .title {
     font-family: "Great Vibes", cursive;
     font-size: 44px;
@@ -74,21 +69,9 @@
   .qr svg { display: block; width: min(58vw, 260px); height: auto; }
   .qr path { fill: #0b1220; }
 
-  a.link {
-    color: #bfdbfe;
-    font-size: 15px;
-    letter-spacing: 0.04em;
-    text-decoration: none;
-    border-bottom: 1px solid rgba(191, 219, 254, 0.35);
-    padding-bottom: 2px;
-    word-break: break-all;
-    text-align: center;
-  }
-
-  a.link:hover { color: #fff; border-color: rgba(255, 255, 255, 0.8); }
-
-  .hint { font-size: 14px; opacity: 0.65; margin: 0; letter-spacing: 0.05em; }
-
+  
+  
+  
   @keyframes pulse {
     0%, 100% { transform: scale(1); }
     5%       { transform: scale(1.025); }
@@ -101,9 +84,8 @@
 </style>
 </head>
 <body>
-  <div class="card">
-    <span class="kicker">scan me</span>
-    <h1 class="title">magical heart</h1>
+  <a class="card" href="https://frankjakrapan.github.io/magical-heart/">
+    <h1 class="title">SCAN ME</h1>
 
     <div class="qr">
       <svg viewBox="0 0 37 37" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -111,8 +93,6 @@
       </svg>
     </div>
 
-    <a class="link" href="https://frankjakrapan.github.io/magical-heart/">https://frankjakrapan.github.io/magical-heart/</a>
-    <p class="hint">เปิดด้วยกล้องมือถือ แล้วรอสักครู่ให้ละอองรวมเป็นหัวใจ</p>
-  </div>
+  </a>
 </body>
 </html>
