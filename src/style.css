@@ -1,6 +1,7 @@
 html, body {
   margin: 0;
   height: 100%;
+  height: 100dvh;
   background: #000;
   overflow: hidden;
   font-family: "Segoe UI", system-ui, sans-serif;
@@ -18,9 +19,11 @@ html, body {
 }
 
 #scene {
+  position: fixed;
+  inset: 0;
   display: block;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   cursor: grab;
 }
 
@@ -28,8 +31,8 @@ html, body {
 #front {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 3;
 }
@@ -55,8 +58,12 @@ html, body {
   position: relative;
   padding: 0;
   border-radius: 22px;
+  opacity: 0;                       /* ซ่อนไว้ จะโผล่ตอนหัวใจแตกออก */
+  transition: opacity 0.5s ease;
   animation: photo-beat 2.6s ease-in-out infinite;
 }
+
+.tribute.reveal .photo-frame { opacity: 1; }
 
 /* แสงฟุ้งหลังรูป ทำให้รูปเหมือนเรืองแสงอยู่ในกลุ่มละออง ไม่ใช่การ์ดที่ลอยมาแปะ */
 .photo-frame::before {
@@ -104,9 +111,16 @@ html, body {
   max-width: var(--photo-max-w, 60vw);
   object-fit: cover;
   border-radius: 22px;
-  filter: saturate(0.94) contrast(1.02) brightness(0.97);
+  filter: saturate(0.94) contrast(1.02) brightness(0.97) blur(10px);
+  transform: scale(1.06);
+  transition: filter 0.7s ease, transform 0.9s ease;
   -webkit-mask-image: var(--photo-mask);
   mask-image: var(--photo-mask);
+}
+
+.tribute.reveal .photo-frame img {
+  filter: saturate(0.94) contrast(1.02) brightness(0.97);
+  transform: scale(1);
 }
 
 .photo-frame.empty { display: none; }

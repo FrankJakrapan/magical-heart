@@ -96,6 +96,8 @@
     } else if (name === 'reform') {
       for (const p of particles) p.beginReform();
     }
+    if (name === 'burst') setReveal(true);
+    else if (name === 'assemble' || name === 'idle') setReveal(false);
   }
 
   function currentConfig() {
@@ -116,6 +118,11 @@
   /* ---------- รูป + ข้อความ วางตามขนาดหัวใจจริง ---------- */
   const tribute = document.querySelector('.tribute');
   const captionBlock = document.querySelector('.caption-block');
+
+  /** รูปจะโผล่เฉพาะช่วงที่หัวใจแตกออก แล้วจางหายตอนรวมร่างกลับ */
+  function setReveal(on) {
+    if (tribute) tribute.classList.toggle('reveal', on || REDUCED);
+  }
 
   function layoutTribute() {
     if (!tribute) return;
@@ -149,8 +156,10 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     view.cx = view.W / 2;
-    view.cy = view.H * 0.38;
-    view.scale = Math.min(view.W, view.H) / 54;
+    // จอสูงแคบ (มือถือ) ให้หัวใจใหญ่ขึ้นและวางต่ำลงหน่อย ไม่งั้นจะลอยเล็ก ๆ อยู่ครึ่งบน
+    const tall = view.H > view.W * 1.35;
+    view.cy = view.H * (tall ? 0.44 : 0.38);
+    view.scale = Math.min(view.W / 38, view.H / 56);
     layoutTribute();
     for (const p of particles) { p.px = p.py = null; }
   }
@@ -208,6 +217,13 @@
   }
 
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+  window.addEventListener('load', () => setTimeout(resize, 60));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+    window.visualViewport.addEventListener('scroll', layoutTribute);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutTribute);
 
   /* ---------- วาด ---------- */
   function drawParticles(dt, time, cfg, heartScale) {
@@ -218,6 +234,8 @@
     const glow = CONFIG.glow;
     const reforming = phase === 'reform';
     const k = reforming ? Math.min(phaseTime / CONFIG.reformDuration, 1) : 0;
+    // ละอองเริ่มปิดล้อมกลับแล้ว ค่อย ๆ ให้รูปจางหายไปก่อนหัวใจเต็มรูป
+    if (reforming && k > 0.65) setReveal(false);
 
     for (const p of particles) {
       p.swirl(dt, swirl);
@@ -362,6 +380,7 @@
 
   resize();
   build();
+  setReveal(false);
   requestAnimationFrame(frame);
 
   // เปิดให้เรียกจากภายนอก/คอนโซลได้
