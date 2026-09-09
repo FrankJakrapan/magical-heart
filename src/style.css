@@ -38,40 +38,6 @@ html, body {
   cursor: grabbing;
 }
 
-.hud {
-  position: fixed;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 18px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: rgba(10, 20, 45, 0.35);
-  border: 1px solid rgba(147, 197, 253, 0.18);
-  backdrop-filter: blur(6px);
-  color: rgba(191, 219, 254, 0.75);
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  user-select: none;
-  pointer-events: none;
-  opacity: 0.85;
-  transition: opacity 0.6s ease;
-}
-
-.hud b {
-  color: #dbeafe;
-  font-weight: 600;
-}
-
-.hud.faded {
-  opacity: 0;
-}
-
-@media (max-width: 600px) {
-  .hud { font-size: 10px; gap: 10px; }
-}
-
 /* ---------- รูปและข้อความกลางหัวใจ ---------- */
 /* ตำแหน่งและขนาดถูกคำนวณจากขนาดหัวใจจริงใน main.js (ตัวแปร --x, --y, --photo-h, --cap) */
 

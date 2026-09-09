@@ -8,7 +8,6 @@
   // เลเยอร์ละอองที่ลอยหน้ารูป (โปร่งใส วางทับ .tribute)
   const frontCanvas = document.getElementById('front');
   const fctx = frontCanvas.getContext('2d');
-  const hud = document.querySelector('.hud');
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -172,13 +171,6 @@
   /* ---------- อินพุต ---------- */
   let dragging = false, lastPX = 0, lastPY = 0, moved = 0;
 
-  function pokeHud() {
-    hud.classList.remove('faded');
-    clearTimeout(pokeHud.t);
-    pokeHud.t = setTimeout(() => hud.classList.add('faded'), 5000);
-  }
-  pokeHud();
-
   canvas.addEventListener('pointerdown', (e) => {
     dragging = true;
     moved = 0;
@@ -206,12 +198,11 @@
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') { e.preventDefault(); trigger(); }
-    if (e.key === 'a' || e.key === 'A') { view.autoSpin = !view.autoSpin; pokeHud(); }
+    if (e.key === 'a' || e.key === 'A') { view.autoSpin = !view.autoSpin; }
     if (e.key === 'r' || e.key === 'R') { build(); setPhase('assemble'); }
   });
 
   function trigger() {
-    pokeHud();
     if (phase === 'burst') return;
     setPhase('burst');
   }
