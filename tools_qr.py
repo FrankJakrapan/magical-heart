@@ -1,11 +1,16 @@
-"""สร้างการ์ด QR เป็นไฟล์ PNG ความละเอียดสูง หน้าตาเดียวกับ share.html"""
+"""สร้าง QR ทั้งชุดจาก URL เดียว: ไฟล์ QR ล้วน, การ์ด PNG และ QR ที่ฝังใน share.html
+
+แก้ค่า URL ด้านล่างแล้วรัน `python tools_qr.py` เมื่อไหร่ที่ที่อยู่เว็บเปลี่ยน
+"""
 import random
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import qrcode
 from qrcode.constants import ERROR_CORRECT_M
 
-URL = "https://frankjakrapan.github.io/magical-heart/"
-OUT = "assets/qr-card.png"
+URL = "https://magical-heart.netlify.app/"
+CARD_OUT = "assets/qr-card.png"
+PLAIN_OUT = "assets/qr.png"
+SHARE_PAGE = "share.html"
 W, H = 1200, 1500
 random.seed(11)
 
@@ -111,5 +116,32 @@ font_heart = ImageFont.truetype("C:/Windows/Fonts/seguisym.ttf", 62)
 with_glow(lambda d: d.text((W / 2, 1258), "\u2661", font=font_heart,
                            fill=(207, 227, 255, 220), anchor="mm"), blur=12)
 
-base.convert('RGB').save(OUT, quality=95)
-print("saved", OUT, base.size)
+base.convert('RGB').save(CARD_OUT, quality=95)
+print("saved", CARD_OUT, base.size)
+
+
+# ---------- QR ล้วนไว้ใช้ที่อื่น ----------
+plain = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=32, border=3)
+plain.add_data(URL)
+plain.make(fit=True)
+plain.make_image(fill_color="#0b1220", back_color="white").save(PLAIN_OUT)
+print("saved", PLAIN_OUT)
+
+
+# ---------- อัปเดต QR + ลิงก์ในหน้า share ----------
+import re
+from qrcode.image.svg import SvgPathImage
+
+svg = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=10, border=2)
+svg.add_data(URL)
+svg.make(fit=True)
+raw = svg.make_image(image_factory=SvgPathImage).to_string().decode()
+view_box = re.search(r'viewBox="([^"]+)"', raw).group(1)
+path = re.search(r'<path[^>]*\sd="([^"]+)"', raw).group(1)
+
+page = open(SHARE_PAGE, encoding="utf-8").read()
+page = re.sub(r'(<svg viewBox=")[^"]+(")', lambda m: m.group(1) + view_box + m.group(2), page)
+page = re.sub(r'(<path d=")[^"]+(")', lambda m: m.group(1) + path + m.group(2), page)
+page = re.sub(r'(<a class="card" href=")[^"]+(")', lambda m: m.group(1) + URL + m.group(2), page)
+open(SHARE_PAGE, "w", encoding="utf-8").write(page)
+print("updated", SHARE_PAGE)

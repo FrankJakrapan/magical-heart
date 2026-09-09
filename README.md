@@ -37,16 +37,16 @@
 
 ## เผยแพร่
 
-หน้าเว็บอยู่บน GitHub Pages: **https://frankjakrapan.github.io/magical-heart/**
+หน้าเว็บ: **https://magical-heart.netlify.app/** (Netlify ต่อกับ repo นี้ deploy อัตโนมัติทุกครั้งที่ push)
+สำรองที่ GitHub Pages: https://frankjakrapan.github.io/magical-heart/
 
 - `share.html` — หน้าโชว์ QR (ฝัง QR เป็น inline SVG ไม่ต้องพึ่งเน็ตนอกจากฟอนต์)
-  เปิดที่ https://frankjakrapan.github.io/magical-heart/share.html
+  เปิดที่ https://magical-heart.netlify.app/share.html
 - `assets/qr-card.png` — การ์ด QR 1200x1500 หน้าตาเดียวกับหน้าเว็บ เอาไว้ส่งหรือปริ้นได้เลย
 - `assets/qr.png` — QR ล้วน 1248px (สแกนง่ายสุด ใช้ตอนต้องการเอาไปวางในงานอื่น)
-- `tools_qr_card.py` — สคริปต์สร้างการ์ด (`python tools_qr_card.py`) ถ้าเปลี่ยน URL ให้แก้ตัวแปร `URL` แล้วรันใหม่
+- `tools_qr.py` — สร้าง QR ทั้งชุด (ไฟล์ล้วน + การ์ด + QR ที่ฝังใน `share.html`) ถ้าย้าย URL ให้แก้ตัวแปร `URL` แล้วรัน `python tools_qr.py` ครั้งเดียวจบ
 
-อัปเดตเว็บ: commit แล้ว `git push` — Pages จะ build ใหม่เองภายใน ~1 นาที
-(ถ้าเปลี่ยน URL ต้องสร้าง QR ใหม่ด้วย `qrcode` ใน Python)
+อัปเดตเว็บ: commit แล้ว `git push` — Netlify และ GitHub Pages จะ build ใหม่เองภายใน ~1 นาที
 
 ## รัน
 
