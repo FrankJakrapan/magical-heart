@@ -61,3 +61,153 @@ html, body {
 @media (max-width: 600px) {
   .hud { font-size: 10px; gap: 10px; }
 }
+
+/* ---------- รูปและข้อความกลางหัวใจ ---------- */
+/* ตำแหน่งและขนาดถูกคำนวณจากขนาดหัวใจจริงใน main.js (ตัวแปร --x, --y, --photo-h, --cap) */
+
+.tribute {
+  position: fixed;
+  left: var(--x, 50%);
+  top: var(--y, 38%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+  animation: tribute-float 7s ease-in-out infinite;
+}
+
+.photo-frame {
+  position: relative;
+  padding: 5px;
+  border-radius: 20px;
+  background: linear-gradient(150deg,
+    rgba(219, 234, 254, 0.6),
+    rgba(147, 197, 253, 0.18) 40%,
+    rgba(37, 99, 235, 0.4));
+  box-shadow:
+    0 0 26px rgba(96, 165, 250, 0.5),
+    0 0 80px rgba(37, 99, 235, 0.3),
+    0 16px 40px rgba(0, 0, 0, 0.5);
+  animation: photo-beat 2.6s ease-in-out infinite;
+}
+
+/* แสงฟุ้งหลังกรอบรูป */
+.photo-frame::before {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  border-radius: 38px;
+  background: radial-gradient(closest-side,
+    rgba(147, 197, 253, 0.32),
+    rgba(59, 130, 246, 0.1) 60%,
+    rgba(59, 130, 246, 0) 100%);
+  filter: blur(6px);
+  z-index: -1;
+}
+
+.photo-frame img {
+  display: block;
+  height: var(--photo-h, 200px);
+  width: auto;
+  max-width: var(--photo-max-w, 60vw);
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.photo-frame.empty { display: none; }
+
+.caption-block {
+  position: fixed;
+  left: var(--x, 50%);
+  top: var(--cap-y, 62%);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 92vw;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.caption {
+  margin: 0;
+  color: #eaf3ff;
+  white-space: nowrap;
+  text-shadow:
+    0 0 12px rgba(147, 197, 253, 0.85),
+    0 0 34px rgba(59, 130, 246, 0.55),
+    0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.caption-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--cap, 40px) * 0.42);
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  font-size: calc(var(--cap, 40px) * 0.30);
+  letter-spacing: 0.40em;
+  text-indent: 0.40em;   /* ชดเชยช่องไฟตัวสุดท้าย ให้อยู่กึ่งกลางจริง */
+  text-transform: uppercase;
+  margin-bottom: calc(var(--cap, 40px) * 0.16);
+  opacity: 0.95;
+}
+
+/* เส้นตกแต่งสองข้างข้อความบรรทัดบน */
+.caption-small::before,
+.caption-small::after {
+  content: "";
+  width: calc(var(--cap, 40px) * 1.5);
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(191, 219, 254, 0),
+    rgba(191, 219, 254, 0.75));
+  box-shadow: 0 0 8px rgba(147, 197, 253, 0.6);
+}
+
+.caption-small::after {
+  background: linear-gradient(90deg,
+    rgba(191, 219, 254, 0.75),
+    rgba(191, 219, 254, 0));
+}
+
+.caption-script {
+  font-family: "Great Vibes", "Segoe Script", "Brush Script MT", cursive;
+  font-size: var(--cap, 40px);
+  line-height: 1.2;
+  margin-top: calc(var(--cap, 40px) * -0.06);
+  animation: caption-glow 4.2s ease-in-out infinite;
+}
+
+@keyframes tribute-float {
+  0%, 100% { transform: translate(-50%, calc(-50% - 5px)); }
+  50%      { transform: translate(-50%, calc(-50% + 5px)); }
+}
+
+/* จังหวะเดียวกับหัวใจบน canvas (2.6 วิ เต้นสองครั้งติด) */
+@keyframes photo-beat {
+  0%   { transform: scale(1); }
+  4%   { transform: scale(1.035); }
+  9%   { transform: scale(1.005); }
+  14%  { transform: scale(1.022); }
+  22%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes caption-glow {
+  0%, 100% {
+    text-shadow:
+      0 0 12px rgba(147, 197, 253, 0.8),
+      0 0 34px rgba(59, 130, 246, 0.5),
+      0 2px 10px rgba(0, 0, 0, 0.6);
+  }
+  50% {
+    text-shadow:
+      0 0 18px rgba(191, 219, 254, 1),
+      0 0 52px rgba(96, 165, 250, 0.75),
+      0 2px 10px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tribute, .photo-frame, .caption-script { animation: none; }
+}

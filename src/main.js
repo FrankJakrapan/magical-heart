@@ -108,6 +108,30 @@
     return PHASES[phase];
   }
 
+  /* ---------- รูป + ข้อความ วางตามขนาดหัวใจจริง ---------- */
+  const tribute = document.querySelector('.tribute');
+  const captionBlock = document.querySelector('.caption-block');
+
+  function layoutTribute() {
+    if (!tribute) return;
+    const c = view.project(0, 0, 0);
+    const halfH = Heart.HALF_H * view.scale * c.p;
+    const halfW = Heart.HALF_W * view.scale * c.p;
+
+    // รูปสูงประมาณครึ่งหนึ่งของหัวใจ กว้างไม่เกินอกหัวใจ
+    const photoH = Math.round(halfH * 0.95);
+    const photoMaxW = Math.round(halfW * 1.15);
+    const cap = Math.max(18, Math.min(56, Math.round(halfW * 0.26)));
+
+    const root = document.documentElement.style;
+    root.setProperty('--x', c.x.toFixed(1) + 'px');
+    root.setProperty('--y', c.y.toFixed(1) + 'px');
+    root.setProperty('--photo-h', photoH + 'px');
+    root.setProperty('--photo-max-w', photoMaxW + 'px');
+    root.setProperty('--cap', cap + 'px');
+    root.setProperty('--cap-y', Math.round(c.y + halfH * 1.05) + 'px');
+  }
+
   /* ---------- resize ---------- */
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -119,6 +143,7 @@
     view.cx = view.W / 2;
     view.cy = view.H * 0.38;
     view.scale = Math.min(view.W, view.H) / 54;
+    layoutTribute();
     for (const p of particles) { p.px = p.py = null; }
   }
 

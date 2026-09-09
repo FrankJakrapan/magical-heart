@@ -4,17 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Magical Heart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Great+Vibes&display=swap">
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
   <canvas id="scene"></canvas>
   <div class="vignette"></div>
 
+  <div class="tribute">
+    <div class="photo-frame">
+      <img id="photo" src="assets/photo.png" alt="">
+    </div>
+  </div>
+
+  <div class="caption-block">
+    <p class="caption caption-small">happy 5 months</p>
+    <p class="caption caption-script">to my favorite person</p>
+  </div>
+
   <div class="hud">
     <span><b>คลิก / Space</b> ระเบิดหัวใจ</span>
     <span><b>ลากเมาส์</b> หมุนกล้อง</span>
     <span><b>A</b> หมุนกล้องอัตโนมัติ</span>
   </div>
+
+  <script>
+    // ถ้ายังไม่ได้ใส่รูป ให้ซ่อนกรอบไว้ ข้อความยังอยู่ครบ
+    document.getElementById('photo').addEventListener('error', function () {
+      document.querySelector('.photo-frame').classList.add('empty');
+    });
+  </script>
 
   <script src="src/heart.js"></script>
   <script src="src/particle.js"></script>
