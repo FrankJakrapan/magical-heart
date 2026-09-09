@@ -24,6 +24,16 @@ html, body {
   cursor: grab;
 }
 
+/* เลเยอร์ละอองที่ลอยหน้ารูป */
+#front {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 3;
+}
+
 #scene:active {
   cursor: grabbing;
 }
@@ -77,47 +87,48 @@ html, body {
 
 .photo-frame {
   position: relative;
-  padding: 5px;
-  border-radius: 20px;
-  background: linear-gradient(150deg,
-    rgba(219, 234, 254, 0.6),
-    rgba(147, 197, 253, 0.18) 40%,
-    rgba(37, 99, 235, 0.4));
-  box-shadow:
-    0 0 26px rgba(96, 165, 250, 0.5),
-    0 0 80px rgba(37, 99, 235, 0.3),
-    0 16px 40px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  border-radius: 22px;
   animation: photo-beat 2.6s ease-in-out infinite;
 }
 
-/* แสงฟุ้งหลังกรอบรูป */
+/* แสงฟุ้งหลังรูป ทำให้รูปเหมือนเรืองแสงอยู่ในกลุ่มละออง ไม่ใช่การ์ดที่ลอยมาแปะ */
 .photo-frame::before {
   content: "";
   position: absolute;
-  inset: -22px;
-  border-radius: 38px;
+  inset: -14%;
+  border-radius: 50%;
   background: radial-gradient(closest-side,
-    rgba(147, 197, 253, 0.32),
-    rgba(59, 130, 246, 0.1) 60%,
+    rgba(191, 219, 254, 0.34),
+    rgba(59, 130, 246, 0.14) 55%,
     rgba(59, 130, 246, 0) 100%);
-  filter: blur(6px);
+  filter: blur(10px);
   z-index: -1;
 }
 
-/* ไล่เฉดบาง ๆ ที่ขอบล่างของรูป ให้กลืนกับแสงและละอองด้านล่าง */
+/* เกลี่ยสีรูปให้เข้าโทนฟ้าของฉาก + ไล่เฉดขอบล่างให้จมลงไปในละออง */
 .photo-frame::after {
   content: "";
   position: absolute;
-  inset: 5px;
-  border-radius: 16px;
+  inset: 0;
+  border-radius: 22px;
   pointer-events: none;
+  mix-blend-mode: screen;
   background:
-    linear-gradient(to bottom,
-      rgba(6, 14, 38, 0) 58%,
-      rgba(6, 14, 38, 0.38) 100%),
-    radial-gradient(120% 90% at 50% 40%,
-      rgba(147, 197, 253, 0) 55%,
-      rgba(59, 130, 246, 0.18) 100%);
+    radial-gradient(120% 85% at 50% 35%,
+      rgba(37, 99, 235, 0) 45%,
+      rgba(37, 99, 235, 0.3) 100%);
+  -webkit-mask-image: var(--photo-mask);
+  mask-image: var(--photo-mask);
+}
+
+/* ขอบภาพค่อย ๆ จางหายไปกับฉาก แทนที่จะเป็นสี่เหลี่ยมคม ๆ */
+.tribute {
+  --photo-mask: radial-gradient(118% 112% at 50% 44%,
+    #000 55%,
+    rgba(0, 0, 0, 0.82) 74%,
+    rgba(0, 0, 0, 0.35) 89%,
+    rgba(0, 0, 0, 0) 100%);
 }
 
 .photo-frame img {
@@ -126,12 +137,16 @@ html, body {
   width: auto;
   max-width: var(--photo-max-w, 60vw);
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 22px;
+  filter: saturate(0.94) contrast(1.02) brightness(0.97);
+  -webkit-mask-image: var(--photo-mask);
+  mask-image: var(--photo-mask);
 }
 
 .photo-frame.empty { display: none; }
 
 .caption-block {
+  z-index: 4;
   position: fixed;
   left: var(--x, 50%);
   top: var(--cap-y, 62%);
@@ -143,14 +158,29 @@ html, body {
   user-select: none;
 }
 
+/* ม่านมืดนุ่ม ๆ หลังข้อความ ไม่ให้ตัวหนังสือกลืนกับแอ่งแสง */
+.caption-block::before {
+  content: "";
+  position: absolute;
+  inset: -55% -22%;
+  z-index: -1;
+  background: radial-gradient(58% 62% at 50% 50%,
+    rgba(1, 5, 20, 0.82) 0%,
+    rgba(1, 5, 20, 0.55) 45%,
+    rgba(1, 5, 20, 0) 100%);
+}
+
 .caption {
+  position: relative;
   margin: 0;
-  color: #eaf3ff;
+  color: #f4f9ff;
   white-space: nowrap;
   text-shadow:
-    0 0 12px rgba(147, 197, 253, 0.85),
-    0 0 34px rgba(59, 130, 246, 0.55),
-    0 2px 10px rgba(0, 0, 0, 0.6);
+    0 1px 2px rgba(1, 5, 20, 0.95),
+    0 2px 12px rgba(1, 5, 20, 0.9),
+    0 0 26px rgba(1, 5, 20, 0.75),
+    0 0 16px rgba(147, 197, 253, 0.6),
+    0 0 42px rgba(59, 130, 246, 0.45);
 }
 
 .caption-small {
@@ -212,15 +242,19 @@ html, body {
 @keyframes caption-glow {
   0%, 100% {
     text-shadow:
-      0 0 12px rgba(147, 197, 253, 0.8),
-      0 0 34px rgba(59, 130, 246, 0.5),
-      0 2px 10px rgba(0, 0, 0, 0.6);
+      0 1px 2px rgba(1, 5, 20, 0.95),
+      0 2px 12px rgba(1, 5, 20, 0.9),
+      0 0 26px rgba(1, 5, 20, 0.75),
+      0 0 16px rgba(147, 197, 253, 0.6),
+      0 0 42px rgba(59, 130, 246, 0.45);
   }
   50% {
     text-shadow:
-      0 0 18px rgba(191, 219, 254, 1),
-      0 0 52px rgba(96, 165, 250, 0.75),
-      0 2px 10px rgba(0, 0, 0, 0.6);
+      0 1px 2px rgba(1, 5, 20, 0.95),
+      0 2px 12px rgba(1, 5, 20, 0.9),
+      0 0 26px rgba(1, 5, 20, 0.75),
+      0 0 22px rgba(219, 234, 254, 0.9),
+      0 0 60px rgba(96, 165, 250, 0.6);
   }
 }
 

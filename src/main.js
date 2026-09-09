@@ -4,6 +4,10 @@
 (function () {
   const canvas = document.getElementById('scene');
   const ctx = canvas.getContext('2d', { alpha: false });
+
+  // เลเยอร์ละอองที่ลอยหน้ารูป (โปร่งใส วางทับ .tribute)
+  const frontCanvas = document.getElementById('front');
+  const fctx = frontCanvas.getContext('2d');
   const hud = document.querySelector('.hud');
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -13,6 +17,7 @@
     sparks: 54,
     stars: 130,
     mist: window.innerWidth < 700 ? 45 : 72,
+    frontDust: window.innerWidth < 700 ? 40 : 70,
     nebula: 6,
     bokeh: window.innerWidth < 700 ? 40 : 70,
     glow: 0.5,               // ความแรงของแสงฟุ้งรอบอนุภาคสว่าง (0 = ปิด)
@@ -61,6 +66,7 @@
   let sparks = [];
   let stars = [];
   let mist = [];
+  let frontDust = [];
   let nebula = [];
   let bokeh = [];
   let rings = Effects.createRings();
@@ -139,7 +145,10 @@
     view.H = canvas.clientHeight;
     canvas.width = view.W * dpr;
     canvas.height = view.H * dpr;
+    frontCanvas.width = canvas.width;
+    frontCanvas.height = canvas.height;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     view.cx = view.W / 2;
     view.cy = view.H * 0.38;
     view.scale = Math.min(view.W, view.H) / 54;
@@ -153,6 +162,7 @@
     sparks = Effects.createSparks(CONFIG.sparks);
     stars = Effects.createStars(CONFIG.stars);
     mist = Effects.createMist(CONFIG.mist);
+    frontDust = Effects.createFrontDust(CONFIG.frontDust);
     nebula = Effects.createNebula(CONFIG.nebula);
     bokeh = Effects.createBokeh(CONFIG.bokeh);
     rings = Effects.createRings();
@@ -350,6 +360,11 @@
     drawSparks(dt);
     drawParticles(dt, time, currentConfig(), 1 + beat * 0.035);
     Effects.drawShooters(ctx, shooters, view.W, view.H, dt);
+
+    // เลเยอร์หน้า: ละอองผ่านหน้ารูป
+    fctx.clearRect(0, 0, view.W, view.H);
+    fctx.globalCompositeOperation = 'lighter';
+    Effects.drawFrontDust(fctx, view, frontDust, dt, time);
 
     requestAnimationFrame(frame);
   }

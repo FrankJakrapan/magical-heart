@@ -69,8 +69,8 @@ const Effects = (function () {
     ctx.translate(base.x, base.y);
     ctx.scale(rx * pulse, ry * pulse);
     const g = ctx.createRadialGradient(0, 0, 0.05, 0, 0, 1);
-    g.addColorStop(0.00, 'rgba(226,247,255,0.95)');
-    g.addColorStop(0.32, 'rgba(96,165,250,0.72)');
+    g.addColorStop(0.00, 'rgba(226,247,255,0.78)');
+    g.addColorStop(0.32, 'rgba(96,165,250,0.6)');
     g.addColorStop(0.68, 'rgba(37,99,235,0.32)');
     g.addColorStop(1.00, 'rgba(29,78,216,0)');
     ctx.fillStyle = g;
@@ -89,7 +89,7 @@ const Effects = (function () {
     if (span <= 0) return;
 
     const w = rx * 1.15 * (1 + Math.sin(time * 0.5) * 0.03);
-    ctx.globalAlpha = 0.5 + energy * 0.35;
+    ctx.globalAlpha = 0.42 + energy * 0.3;
     ctx.drawImage(beamSprite, base.x - w / 2, top.y, w, span);
     ctx.globalAlpha = 1;
   }
@@ -367,6 +367,44 @@ const Effects = (function () {
     return view.project(x, z * Math.sin(tilt) - 6, z * Math.cos(tilt));
   }
 
+  /* ---------- ละอองที่ลอย "หน้า" รูป ทำให้รูปจมอยู่ในฉากไม่ใช่แปะทับ ---------- */
+  function createFrontDust(count) {
+    const arr = [];
+    for (let i = 0; i < count; i++) arr.push(resetDust({}, true));
+    return arr;
+  }
+
+  function resetDust(d, initial) {
+    d.x = (Math.random() - 0.5) * 34;
+    d.y = initial ? (Math.random() - 0.5) * 46 : -26 - Math.random() * 4;
+    d.z = -12 - Math.random() * 20;              // ติดลบ = อยู่ใกล้กล้องกว่าหัวใจ
+    d.vx = (Math.random() - 0.5) * 1.6;
+    d.vy = 1.4 + Math.random() * 3.4;
+    d.size = 0.5 + Math.random() * 1.6;
+    d.soft = Math.random() < 0.35;
+    d.color = d.soft ? '#93c5fd' : '#dbeafe';
+    d.sprite = d.soft ? Sprites.soft(d.color) : Sprites.get(d.color);
+    d.a = d.soft ? 0.1 + Math.random() * 0.12 : 0.25 + Math.random() * 0.45;
+    d.ph = Math.random() * Math.PI * 2;
+    d.sw = 0.4 + Math.random() * 0.9;
+    return d;
+  }
+
+  function drawFrontDust(ctx, view, dust, dt, time) {
+    for (const d of dust) {
+      d.y += d.vy * dt;
+      d.x += (d.vx + Math.sin(time * d.sw + d.ph) * 0.6) * dt;
+      if (d.y > 26) resetDust(d, false);
+
+      const s = view.project(d.x, d.y, d.z);
+      const r = d.size * s.p;
+      const w = d.soft ? r * 22 : r * 7;
+      ctx.globalAlpha = d.a * (0.6 + 0.4 * Math.sin(time * d.sw * 1.7 + d.ph));
+      ctx.drawImage(d.sprite, s.x - w / 2, s.y - w / 2, w, w);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   /* ---------- ดาวตกเป็นครั้งคราว ---------- */
   function createShooters() {
     return { list: [], timer: 2 + Math.random() * 3 };
@@ -443,6 +481,8 @@ const Effects = (function () {
     drawBokeh: drawBokeh,
     drawAura: drawAura,
     drawHalo: drawHalo,
+    createFrontDust: createFrontDust,
+    drawFrontDust: drawFrontDust,
     createShooters: createShooters,
     drawShooters: drawShooters,
     drawVignette: drawVignette,
