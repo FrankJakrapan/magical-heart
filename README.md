@@ -40,7 +40,9 @@
 
 - `share.html` — หน้าโชว์ QR (ฝัง QR เป็น inline SVG ไม่ต้องพึ่งเน็ตนอกจากฟอนต์)
   เปิดที่ https://frankjakrapan.github.io/magical-heart/share.html
-- `assets/qr.png` — QR ไฟล์ภาพ 1248px สำหรับส่งต่อหรือปริ้น
+- `assets/qr-card.png` — การ์ด QR 1200x1500 หน้าตาเดียวกับหน้าเว็บ เอาไว้ส่งหรือปริ้นได้เลย
+- `assets/qr.png` — QR ล้วน 1248px (สแกนง่ายสุด ใช้ตอนต้องการเอาไปวางในงานอื่น)
+- `tools_qr_card.py` — สคริปต์สร้างการ์ด (`python tools_qr_card.py`) ถ้าเปลี่ยน URL ให้แก้ตัวแปร `URL` แล้วรันใหม่
 
 อัปเดตเว็บ: commit แล้ว `git push` — Pages จะ build ใหม่เองภายใน ~1 นาที
 (ถ้าเปลี่ยน URL ต้องสร้าง QR ใหม่ด้วย `qrcode` ใน Python)
