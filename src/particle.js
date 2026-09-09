@@ -60,7 +60,24 @@ const Sprites = (function () {
     return c;
   }
 
-  return { get, soft };
+  /** ลูกกลมเรืองแสง มีไส้สว่างและขอบฟุ้ง ใช้กับลูกแสงที่ลอยอยู่ในฉาก */
+  function orb(color) {
+    const key = 'orb:' + color;
+    let c = cache.get(key);
+    if (c) return c;
+    c = make(96, [
+      [0.00, 'rgba(255,255,255,0.92)'],
+      [0.16, hexToRgba(color, 0.75)],
+      [0.34, hexToRgba(color, 0.38)],
+      [0.62, hexToRgba(color, 0.13)],
+      [0.85, hexToRgba(color, 0.03)],
+      [1.00, hexToRgba(color, 0)]
+    ]);
+    cache.set(key, c);
+    return c;
+  }
+
+  return { get, soft, orb };
 })();
 
 class Particle {

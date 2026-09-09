@@ -285,22 +285,36 @@ const Effects = (function () {
     ctx.globalAlpha = 1;
   }
 
-  /* ---------- ฝุ่นแสงลอยทั่วจอ มีทั้งชัดและเบลอ ---------- */
+  /* ---------- ลูกแสงฟ้า-ขาวลอยทั่วจอ แบ่งเป็น 3 ระยะให้มีมิติ ---------- */
+  const ORB_COLORS = ['#dbeafe', '#bfdbfe', '#93c5fd', '#a5f3fc', '#eff6ff'];
+
   function createBokeh(count) {
     const arr = [];
     for (let i = 0; i < count; i++) {
-      const blur = Math.random() < 0.45;
-      const color = blur ? '#93c5fd' : '#dbeafe';
+      // 0 = ใกล้ (ใหญ่ เบลอ จาง), 1 = กลาง (ลูกกลมเรืองแสง), 2 = ไกล (เม็ดเล็กคม)
+      const r = Math.random();
+      const tier = r < 0.22 ? 0 : (r < 0.66 ? 1 : 2);
+      const color = ORB_COLORS[(Math.random() * ORB_COLORS.length) | 0];
+
       arr.push({
-        sprite: blur ? Sprites.soft(color) : Sprites.get(color),
+        tier: tier,
+        sprite: tier === 0 ? Sprites.soft(color)
+              : tier === 1 ? Sprites.orb(color)
+              : Sprites.get(color),
         x: Math.random(),
         y: Math.random(),
-        size: blur ? 26 + Math.random() * 54 : 3 + Math.random() * 7,
-        a: blur ? 0.05 + Math.random() * 0.07 : 0.16 + Math.random() * 0.3,
-        vy: -(0.004 + Math.random() * 0.012),
-        drift: 0.004 + Math.random() * 0.012,
+        size: tier === 0 ? 60 + Math.random() * 90
+            : tier === 1 ? 10 + Math.random() * 26
+            : 3 + Math.random() * 7,
+        a: tier === 0 ? 0.05 + Math.random() * 0.07
+         : tier === 1 ? 0.14 + Math.random() * 0.24
+         : 0.22 + Math.random() * 0.38,
+        vy: -(tier === 0 ? 0.010 + Math.random() * 0.014
+            : tier === 1 ? 0.006 + Math.random() * 0.012
+            : 0.003 + Math.random() * 0.008),
+        drift: (tier === 0 ? 0.012 : tier === 1 ? 0.008 : 0.004) * (0.5 + Math.random()),
         ph: Math.random() * Math.PI * 2,
-        sw: 0.15 + Math.random() * 0.35
+        sw: 0.15 + Math.random() * 0.4
       });
     }
     return arr;
@@ -309,10 +323,13 @@ const Effects = (function () {
   function drawBokeh(ctx, bokeh, W, H, dt, time) {
     for (const b of bokeh) {
       b.y += b.vy * dt;
-      if (b.y < -0.08) { b.y = 1.08; b.x = Math.random(); }
+      if (b.y < -0.12) { b.y = 1.12; b.x = Math.random(); }
       const x = (b.x + Math.sin(time * b.sw + b.ph) * b.drift) * W;
+      const twinkle = b.tier === 2
+        ? 0.45 + 0.55 * Math.sin(time * b.sw * 2.4 + b.ph)
+        : 0.7 + 0.3 * Math.sin(time * b.sw * 1.3 + b.ph);
       const d = b.size;
-      ctx.globalAlpha = b.a * (0.55 + 0.45 * Math.sin(time * b.sw * 2 + b.ph));
+      ctx.globalAlpha = b.a * twinkle;
       ctx.drawImage(b.sprite, x - d / 2, b.y * H - d / 2, d, d);
     }
     ctx.globalAlpha = 1;
@@ -380,11 +397,17 @@ const Effects = (function () {
     d.z = -12 - Math.random() * 20;              // ติดลบ = อยู่ใกล้กล้องกว่าหัวใจ
     d.vx = (Math.random() - 0.5) * 1.6;
     d.vy = 1.4 + Math.random() * 3.4;
-    d.size = 0.5 + Math.random() * 1.6;
-    d.soft = Math.random() < 0.35;
-    d.color = d.soft ? '#93c5fd' : '#dbeafe';
-    d.sprite = d.soft ? Sprites.soft(d.color) : Sprites.get(d.color);
-    d.a = d.soft ? 0.1 + Math.random() * 0.12 : 0.25 + Math.random() * 0.45;
+    d.size = 0.5 + Math.random() * 1.8;
+    const kind = Math.random();
+    d.soft = kind < 0.3;
+    d.orb = !d.soft && kind < 0.62;
+    d.color = ORB_COLORS[(Math.random() * ORB_COLORS.length) | 0];
+    d.sprite = d.soft ? Sprites.soft(d.color)
+             : d.orb ? Sprites.orb(d.color)
+             : Sprites.get(d.color);
+    d.a = d.soft ? 0.1 + Math.random() * 0.12
+        : d.orb ? 0.18 + Math.random() * 0.24
+        : 0.25 + Math.random() * 0.45;
     d.ph = Math.random() * Math.PI * 2;
     d.sw = 0.4 + Math.random() * 0.9;
     return d;
@@ -398,7 +421,7 @@ const Effects = (function () {
 
       const s = view.project(d.x, d.y, d.z);
       const r = d.size * s.p;
-      const w = d.soft ? r * 22 : r * 7;
+      const w = d.soft ? r * 22 : (d.orb ? r * 13 : r * 7);
       ctx.globalAlpha = d.a * (0.6 + 0.4 * Math.sin(time * d.sw * 1.7 + d.ph));
       ctx.drawImage(d.sprite, s.x - w / 2, s.y - w / 2, w, w);
     }

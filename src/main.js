@@ -13,13 +13,13 @@
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const CONFIG = {
-    particles: window.innerWidth < 700 ? 900 : 1500,
-    sparks: 54,
+    particles: window.innerWidth < 700 ? 1000 : 1800,
+    sparks: 76,
     stars: 130,
-    mist: window.innerWidth < 700 ? 45 : 72,
-    frontDust: window.innerWidth < 700 ? 40 : 70,
-    nebula: 6,
-    bokeh: window.innerWidth < 700 ? 40 : 70,
+    mist: window.innerWidth < 700 ? 55 : 95,
+    frontDust: window.innerWidth < 700 ? 70 : 130,
+    nebula: 8,
+    bokeh: window.innerWidth < 700 ? 80 : 170,
     glow: 0.5,               // ความแรงของแสงฟุ้งรอบอนุภาคสว่าง (0 = ปิด)
     beatPeriod: 2.6,         // จังหวะเต้นของหัวใจ (วินาที)
     fov: 90,
