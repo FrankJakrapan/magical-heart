@@ -34,6 +34,17 @@
 | `A` | เปิด/ปิดหมุนกล้องอัตโนมัติ |
 | `R` | สร้างอนุภาคใหม่ทั้งหมด |
 
+## เผยแพร่
+
+หน้าเว็บอยู่บน GitHub Pages: **https://frankjakrapan.github.io/magical-heart/**
+
+- `share.html` — หน้าโชว์ QR (ฝัง QR เป็น inline SVG ไม่ต้องพึ่งเน็ตนอกจากฟอนต์)
+  เปิดที่ https://frankjakrapan.github.io/magical-heart/share.html
+- `assets/qr.png` — QR ไฟล์ภาพ 1248px สำหรับส่งต่อหรือปริ้น
+
+อัปเดตเว็บ: commit แล้ว `git push` — Pages จะ build ใหม่เองภายใน ~1 นาที
+(ถ้าเปลี่ยน URL ต้องสร้าง QR ใหม่ด้วย `qrcode` ใน Python)
+
 ## รัน
 
 เปิด `index.html` ตรง ๆ ได้เลย หรือถ้าเบราว์เซอร์บล็อกไฟล์ย่อย ให้เสิร์ฟเป็น static:
