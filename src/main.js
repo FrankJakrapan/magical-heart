@@ -92,7 +92,8 @@
     if (name === 'burst') {
       energy = 1;
       Effects.spawnRing(rings, 1);
-      for (const p of particles) p.explode(CONFIG.burstPower * (0.5 + Math.random() * 0.9));
+      const power = CONFIG.burstPower * (REDUCED ? 0.55 : 1);
+      for (const p of particles) p.explode(power * (0.5 + Math.random() * 0.9));
     } else if (name === 'reform') {
       for (const p of particles) p.beginReform();
     }
@@ -121,7 +122,7 @@
 
   /** รูปจะโผล่เฉพาะช่วงที่หัวใจแตกออก แล้วจางหายตอนรวมร่างกลับ */
   function setReveal(on) {
-    if (tribute) tribute.classList.toggle('reveal', on || REDUCED);
+    if (tribute) tribute.classList.toggle('reveal', on);
   }
 
   function layoutTribute() {
@@ -333,7 +334,7 @@
 
     // เปลี่ยนจังหวะ
     if (phase === 'assemble' && phaseTime > 2.4) setPhase('idle');
-    else if (phase === 'idle' && !REDUCED && phaseTime > CONFIG.idleDuration) setPhase('burst');
+    else if (phase === 'idle' && phaseTime > CONFIG.idleDuration * (REDUCED ? 1.7 : 1)) setPhase('burst');
     else if (phase === 'burst' && phaseTime > CONFIG.burstDuration) setPhase('reform');
     else if (phase === 'reform' && phaseTime > CONFIG.reformDuration) setPhase('settle');
     else if (phase === 'settle' && phaseTime > CONFIG.settleDuration) setPhase('idle');
